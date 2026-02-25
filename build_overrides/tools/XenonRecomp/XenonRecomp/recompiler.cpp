@@ -2,6 +2,8 @@
 #include "recompiler.h"
 #include <xex_patcher.h>
 #include <array>
+#include <xxhash.h>
+#include <fmt/format.h>
 
 namespace
 {
