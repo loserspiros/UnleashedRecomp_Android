@@ -2320,9 +2320,8 @@ bool Recompiler::Recompile(const RecompileArgs& args)
     case PPC_INST_XORIS:
         println("\t{}.u64 = {}.u64 ^ {};", r(insn.operands[0]), r(insn.operands[1]), insn.operands[2] << 16);
         break;
-
     default:
-
+        return false;
     }
 
 #if 1
