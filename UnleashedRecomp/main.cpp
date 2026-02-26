@@ -128,20 +128,18 @@ static void EnsureMemoryRange(const void* start, size_t size)
     }
 }
 
-
-uint32_t LdrLoadModule(const std::filesystem::path &path)
+static const Xex2Header* ValidateXexHeader(const std::vector<uint8_t>& loadResult)
 {
-    auto loadResult = LoadFile(path);
     if (loadResult.empty())
     {
         assert("Failed to load module" && false);
-        return 0;
+        return nullptr;
     }
 
     if (loadResult.size() < sizeof(Xex2Header))
     {
         SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, GameWindow::GetTitle(), "Invalid XEX file: File too small.", GameWindow::s_pWindow);
-        return 0;
+        return nullptr;
     }
 
     auto* header = reinterpret_cast<const Xex2Header*>(loadResult.data());
@@ -149,13 +147,13 @@ uint32_t LdrLoadModule(const std::filesystem::path &path)
     if (header->magic != 0x58455832) // "XEX2"
     {
         SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, GameWindow::GetTitle(), "Invalid XEX file: Incorrect magic.", GameWindow::s_pWindow);
-        return 0;
+        return nullptr;
     }
 
     if (header->headerSize > loadResult.size())
     {
         SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, GameWindow::GetTitle(), "Invalid XEX file: Header size too large.", GameWindow::s_pWindow);
-        return 0;
+        return nullptr;
     }
 
     // Verify headers array bounds
@@ -163,23 +161,26 @@ uint32_t LdrLoadModule(const std::filesystem::path &path)
     if ((uint64_t)sizeof(Xex2Header) + headersArraySize > loadResult.size())
     {
          SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, GameWindow::GetTitle(), "Invalid XEX file: Headers array out of bounds.", GameWindow::s_pWindow);
-         return 0;
+         return nullptr;
     }
 
     if (header->securityOffset >= loadResult.size() ||
         (uint64_t)header->securityOffset + sizeof(Xex2SecurityInfo) > loadResult.size())
     {
         SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, GameWindow::GetTitle(), "Invalid XEX file: Security info out of bounds.", GameWindow::s_pWindow);
-        return 0;
+        return nullptr;
     }
 
-    auto* security = reinterpret_cast<const Xex2SecurityInfo*>(loadResult.data() + header->securityOffset);
+    return header;
+}
 
+static const Xex2OptFileFormatInfo* GetAndValidateFileFormatInfo(const std::vector<uint8_t>& loadResult)
+{
     const void* fileFormatInfoPtr = getOptHeaderPtr(loadResult.data(), XEX_HEADER_FILE_FORMAT_INFO);
     if (!fileFormatInfoPtr)
     {
          SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, GameWindow::GetTitle(), "Invalid XEX file: Missing File Format Info.", GameWindow::s_pWindow);
-         return 0;
+         return nullptr;
     }
 
     // Verify fileFormatInfoPtr is within bounds
@@ -187,7 +188,7 @@ uint32_t LdrLoadModule(const std::filesystem::path &path)
         (const uint8_t*)fileFormatInfoPtr + sizeof(Xex2OptFileFormatInfo) > loadResult.data() + loadResult.size())
     {
          SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, GameWindow::GetTitle(), "Invalid XEX file: File Format Info pointer out of bounds.", GameWindow::s_pWindow);
-         return 0;
+         return nullptr;
     }
 
     const auto* fileFormatInfo = reinterpret_cast<const Xex2OptFileFormatInfo*>(fileFormatInfoPtr);
@@ -196,27 +197,35 @@ uint32_t LdrLoadModule(const std::filesystem::path &path)
     if ((const uint8_t*)fileFormatInfo + fileFormatInfo->infoSize > loadResult.data() + loadResult.size())
     {
          SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, GameWindow::GetTitle(), "Invalid XEX file: File Format Info size out of bounds.", GameWindow::s_pWindow);
-         return 0;
+         return nullptr;
     }
 
+    return fileFormatInfo;
+}
+
+static bool GetAndValidateEntryPoint(const std::vector<uint8_t>& loadResult, uint32_t& outEntry)
+{
     const void* entryPtr = getOptHeaderPtr(loadResult.data(), XEX_HEADER_ENTRY_POINT);
     if (!entryPtr)
     {
          SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, GameWindow::GetTitle(), "Invalid XEX file: Missing Entry Point.", GameWindow::s_pWindow);
-         return 0;
+         return false;
     }
 
     if ((const uint8_t*)entryPtr < loadResult.data() ||
         (const uint8_t*)entryPtr + sizeof(uint32_t) > loadResult.data() + loadResult.size())
     {
          SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, GameWindow::GetTitle(), "Invalid XEX file: Entry Point out of bounds.", GameWindow::s_pWindow);
-         return 0;
+         return false;
     }
 
-    uint32_t entry;
-    memcpy(&entry, entryPtr, sizeof(entry));
-    ByteSwapInplace(entry);
+    memcpy(&outEntry, entryPtr, sizeof(outEntry));
+    ByteSwapInplace(outEntry);
+    return true;
+}
 
+static bool LoadCompressedImage(const std::vector<uint8_t>& loadResult, const Xex2Header* header, const Xex2SecurityInfo* security, const Xex2OptFileFormatInfo* fileFormatInfo)
+{
     auto srcData = loadResult.data() + header->headerSize;
     auto destData = reinterpret_cast<uint8_t*>(g_memory.Translate(security->loadAddress));
     auto loadAddress = security->loadAddress;
@@ -251,7 +260,7 @@ uint32_t LdrLoadModule(const std::filesystem::path &path)
             if (srcData + blocks[i].dataSize > loadResult.data() + loadResult.size())
             {
                 SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, GameWindow::GetTitle(), "Invalid XEX file: Compressed block source data out of bounds.", GameWindow::s_pWindow);
-                return 0;
+                return false;
             }
 
             memcpy(currentDest, srcData, blocks[i].dataSize);
@@ -268,6 +277,37 @@ uint32_t LdrLoadModule(const std::filesystem::path &path)
     else
     {
         assert(false && "Unknown compression type.");
+    }
+
+    return true;
+}
+
+uint32_t LdrLoadModule(const std::filesystem::path &path)
+{
+    auto loadResult = LoadFile(path);
+    const Xex2Header* header = ValidateXexHeader(loadResult);
+    if (!header)
+    {
+        return 0;
+    }
+
+    auto* security = reinterpret_cast<const Xex2SecurityInfo*>(loadResult.data() + header->securityOffset);
+
+    const Xex2OptFileFormatInfo* fileFormatInfo = GetAndValidateFileFormatInfo(loadResult);
+    if (!fileFormatInfo)
+    {
+        return 0;
+    }
+
+    uint32_t entry;
+    if (!GetAndValidateEntryPoint(loadResult, entry))
+    {
+        return 0;
+    }
+
+    if (!LoadCompressedImage(loadResult, header, security, fileFormatInfo))
+    {
+        return 0;
     }
 
     auto res = reinterpret_cast<const Xex2ResourceInfo*>(getOptHeaderPtr(loadResult.data(), XEX_HEADER_RESOURCE_INFO));
