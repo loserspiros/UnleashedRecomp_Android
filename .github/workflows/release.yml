@@ -33,8 +33,9 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y 7zip patchelf ninja-build zip unzip tar pkg-config autoconf automake libtool curl
-          pip install --upgrade gdown
+          sudo apt-get install -y 7zip patchelf ninja-build zip unzip tar pkg-config autoconf automake libtool curl pipx
+          pipx install gdown
+          echo "$HOME/.local/bin" >> $GITHUB_PATH
 
       - name: Free Disk Space
         uses: jlumbroso/free-disk-space@main
