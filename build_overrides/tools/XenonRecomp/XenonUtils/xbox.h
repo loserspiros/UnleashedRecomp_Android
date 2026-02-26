@@ -196,6 +196,8 @@ typedef struct _XDISPATCHER_HEADER
 
     be<uint32_t> SignalState;
     XLIST_ENTRY WaitListHead;
+
+    _XDISPATCHER_HEADER() : Lock() {}
 } XDISPATCHER_HEADER, * XPDISPATCHER_HEADER;
 
 // These variables are never accessed in guest code, we can safely use them in little endian
@@ -229,6 +231,8 @@ typedef struct _XIO_STATUS_BLOCK
         be<uint32_t> Pointer;
     };
     be<uint32_t> Information;
+
+    _XIO_STATUS_BLOCK() : Status() {}
 } XIO_STATUS_BLOCK;
 
 typedef struct _XOVERLAPPED {
@@ -260,6 +264,8 @@ typedef struct _XXOVERLAPPED {
     be<uint32_t> pCompletionRoutine;
     be<uint32_t> dwCompletionContext;
     be<uint32_t> dwExtendedError;
+
+    _XXOVERLAPPED() : u(), InternalContext(0) {}
 } XXOVERLAPPED, *PXXOVERLAPPED;
 static_assert(sizeof(_XXOVERLAPPED) == 0x1C);
 
