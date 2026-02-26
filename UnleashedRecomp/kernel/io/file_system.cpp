@@ -44,8 +44,23 @@ struct FindHandle : KernelObject
         // Look for only work folder in mod folders, AR files cause issues.
         if (pathNoPrefix.starts_with("work"))
         {
-            std::string pathStr(pathNoPrefix);
-            std::replace(pathStr.begin(), pathStr.end(), '\\', '/');
+            char stackBuf[260];
+            std::string heapBuf;
+            std::string_view pathStr;
+
+            if (pathNoPrefix.length() < sizeof(stackBuf))
+            {
+                memcpy(stackBuf, pathNoPrefix.data(), pathNoPrefix.length());
+                stackBuf[pathNoPrefix.length()] = '\0';
+                std::replace(stackBuf, stackBuf + pathNoPrefix.length(), '\\', '/');
+                pathStr = std::string_view(stackBuf, pathNoPrefix.length());
+            }
+            else
+            {
+                heapBuf = pathNoPrefix;
+                std::replace(heapBuf.begin(), heapBuf.end(), '\\', '/');
+                pathStr = heapBuf;
+            }
 
             for (size_t i = 0; ; i++)
             {
