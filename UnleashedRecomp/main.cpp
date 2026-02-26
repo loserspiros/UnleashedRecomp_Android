@@ -115,6 +115,19 @@ void KiSystemStartup()
     PreloadContext preloadContext;
     preloadContext.PreloadExecutable();
 }
+static void EnsureMemoryRange(const void* start, size_t size)
+{
+    if (size == 0)
+        return;
+
+    const auto* startPtr = static_cast<const uint8_t*>(start);
+    if (!g_memory.IsInMemoryRange(startPtr) || !g_memory.IsInMemoryRange(startPtr + size - 1))
+    {
+        SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, GameWindow::GetTitle(), Localise("System_MemoryAllocationFailed").c_str(), GameWindow::s_pWindow);
+        std::exit(1);
+    }
+}
+
 
 uint32_t LdrLoadModule(const std::filesystem::path &path)
 {
@@ -233,14 +246,7 @@ uint32_t LdrLoadModule(const std::filesystem::path &path)
 
         for (size_t i = 0; i < numBlocks; i++)
         {
-            if (blocks[i].dataSize > 0)
-            {
-                if (!g_memory.IsInMemoryRange(currentDest) || !g_memory.IsInMemoryRange(currentDest + blocks[i].dataSize - 1))
-                {
-                    SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, GameWindow::GetTitle(), Localise("System_MemoryAllocationFailed").c_str(), GameWindow::s_pWindow);
-                    std::exit(1);
-                }
-            }
+            EnsureMemoryRange(currentDest, blocks[i].dataSize);
 
             if (srcData + blocks[i].dataSize > loadResult.data() + loadResult.size())
             {
@@ -253,14 +259,7 @@ uint32_t LdrLoadModule(const std::filesystem::path &path)
             srcData += blocks[i].dataSize;
             currentDest += blocks[i].dataSize;
 
-            if (blocks[i].zeroSize > 0)
-            {
-                if (!g_memory.IsInMemoryRange(currentDest) || !g_memory.IsInMemoryRange(currentDest + blocks[i].zeroSize - 1))
-                {
-                    SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, GameWindow::GetTitle(), Localise("System_MemoryAllocationFailed").c_str(), GameWindow::s_pWindow);
-                    std::exit(1);
-                }
-            }
+            EnsureMemoryRange(currentDest, blocks[i].zeroSize);
 
             memset(currentDest, 0, blocks[i].zeroSize);
             currentDest += blocks[i].zeroSize;
