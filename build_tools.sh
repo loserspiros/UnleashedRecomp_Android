@@ -77,6 +77,10 @@ cd ../..
 cp tools/XenosRecomp/thirdparty/dxc-bin/lib/x64/libdxcompiler.so "$OUTPUT_BIN_DIR/"
 echo "Copied libdxcompiler.so"
 
+# Copy libdxil.so
+cp tools/XenosRecomp/thirdparty/dxc-bin/lib/x64/libdxil.so "$OUTPUT_BIN_DIR/"
+echo "Copied libdxil.so"
+
 echo "Build tools ready in $OUTPUT_BIN_DIR"
 ls -l "$OUTPUT_BIN_DIR"
 
