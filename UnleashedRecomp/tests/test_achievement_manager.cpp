@@ -45,6 +45,7 @@ TEST_CASE("AchievementManager")
 
         AchievementManager::Data.Records[0].ID = 100;
         AchievementManager::Data.Records[0].Timestamp = 123456789;
+        AchievementManager::s_unlockedTimestamps[100] = 123456789;
 
         CHECK(AchievementManager::GetTimestamp(100) == 123456789);
         CHECK(AchievementManager::GetTimestamp(999) == 0);
@@ -53,6 +54,7 @@ TEST_CASE("AchievementManager")
     SUBCASE("IsUnlocked")
     {
         AchievementManager::Data.Records[0].ID = 200;
+        AchievementManager::s_unlockedTimestamps[200] = 1;
         CHECK(AchievementManager::IsUnlocked(200));
         CHECK_FALSE(AchievementManager::IsUnlocked(201));
     }
