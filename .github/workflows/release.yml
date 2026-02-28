@@ -91,7 +91,11 @@ jobs:
 
       - name: Bootstrap vcpkg
         run: |
-          ./thirdparty/vcpkg/bootstrap-vcpkg.sh
+          for i in {1..5}; do
+            ./thirdparty/vcpkg/bootstrap-vcpkg.sh && break
+            echo "vcpkg bootstrap failed, retrying in 15s..."
+            sleep 15
+          done
 
       - name: Build extract-xiso
         run: |
