@@ -7,6 +7,7 @@
 #include <mutex>
 #include <atomic>
 #include <concurrentqueue.h>
+#include <sys/resource.h>
 
 static PPCFunc* g_clientCallback{};
 static uint32_t g_clientCallbackParam{}; // pointer in guest memory
@@ -85,9 +86,11 @@ void XAudioInitializeSystem() {
 static void AudioThread() {
     GuestThreadContext ctx(0);
 
+    // Set high priority for the audio generation thread
+    setpriority(PRIO_PROCESS, 0, -15);
+
     while (!g_audioThreadShouldExit) {
         // Optimal queue size for low latency vs stability
-        // We target a queue size that covers at least one burst
         size_t targetQueueSize = std::max<size_t>(2, (g_oboeDriver->framesPerBurst + XAUDIO_NUM_SAMPLES - 1) / XAUDIO_NUM_SAMPLES);
 
         if (g_oboeDriver && g_oboeDriver->audioQueue.size_approx() < targetQueueSize) {
@@ -96,8 +99,8 @@ static void AudioThread() {
                 g_clientCallback(ctx.ppcContext, g_memory.base);
             }
         } else {
-            // High-precision sleep/yield based on remaining time
-            std::this_thread::sleep_for(std::chrono::microseconds(250));
+            // High-precision sleep
+            std::this_thread::sleep_for(std::chrono::microseconds(200));
         }
     }
 }

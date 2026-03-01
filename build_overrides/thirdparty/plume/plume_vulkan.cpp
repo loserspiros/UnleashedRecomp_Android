@@ -3857,6 +3857,8 @@ namespace plume {
         VkPhysicalDeviceVulkan13Features vulkan13Features = {};
         vulkan13Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES;
         vulkan13Features.dynamicRendering = VK_TRUE;
+        vulkan13Features.maintenance4 = VK_TRUE;
+        vulkan13Features.inlineUniformBlock = VK_TRUE;
         vulkan13Features.synchronization2 = VK_TRUE;
 
         VkPhysicalDeviceFeatures2 deviceFeatures = {};

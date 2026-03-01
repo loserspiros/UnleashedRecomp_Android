@@ -13,6 +13,8 @@
 #include <SDL_syswm.h>
 #include <mutex>
 #include <vector>
+#include <deque>
+#include <numeric>
 #include <os/logger.h>
 #include <user/config.h>
 
@@ -60,6 +62,8 @@ namespace perf {
 
 static std::vector<int32_t> g_threadIds;
 static std::mutex g_hintMutex;
+static std::deque<int64_t> g_frameTimeHistory;
+static constexpr size_t MAX_HISTORY = 8;
 
 void EnableSustainedPerformanceMode(bool enable) {
     JNIEnv* env = (JNIEnv*)SDL_AndroidGetJNIEnv();
@@ -97,22 +101,25 @@ static void EnsureHintSession() {
 }
 
 void ReportFrameTime(int64_t frameTimeNs) {
-    {
-        std::lock_guard<std::mutex> lock(g_hintMutex);
-        EnsureHintSession();
-    }
+    std::lock_guard<std::mutex> lock(g_hintMutex);
+    EnsureHintSession();
 
     if (g_hintSession && pAPerformanceHint_reportActualWorkDuration) {
-        pAPerformanceHint_reportActualWorkDuration(g_hintSession, frameTimeNs);
+        // Smooth frame time to reduce jitter in frequency scaling
+        g_frameTimeHistory.push_back(frameTimeNs);
+        if (g_frameTimeHistory.size() > MAX_HISTORY) {
+            g_frameTimeHistory.pop_front();
+        }
+
+        int64_t smoothedTime = std::accumulate(g_frameTimeHistory.begin(), g_frameTimeHistory.end(), 0LL) / g_frameTimeHistory.size();
+        pAPerformanceHint_reportActualWorkDuration(g_hintSession, smoothedTime);
     }
 }
 
 void SetThreadPriority(bool isRenderThread) {
     if (isRenderThread) {
-        // High priority for render thread
         setpriority(PRIO_PROCESS, 0, -10);
     } else {
-        // Balanced priority for other threads
         setpriority(PRIO_PROCESS, 0, 0);
     }
 }
