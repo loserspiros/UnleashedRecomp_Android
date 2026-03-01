@@ -21,6 +21,7 @@ public:
     oboe::ManagedStream stream;
     moodycamel::ConcurrentQueue<AudioFrame> audioQueue;
     std::atomic<bool> downMixToStereo{true};
+    int32_t framesPerBurst = 0;
 
     OboeAudioDriver() : audioQueue(128) {}
 
@@ -75,6 +76,9 @@ void XAudioInitializeSystem() {
         return;
     }
 
+    g_oboeDriver->framesPerBurst = g_oboeDriver->stream->getFramesPerBurst();
+    LOGFN_INFO("Oboe Stream burst size: {}", g_oboeDriver->framesPerBurst);
+
     g_oboeDriver->stream->requestStart();
 }
 
@@ -82,16 +86,18 @@ static void AudioThread() {
     GuestThreadContext ctx(0);
 
     while (!g_audioThreadShouldExit) {
-        // High-performance wait loop
-        // We want to keep around 2-3 frames in the queue for stability
-        if (g_oboeDriver && g_oboeDriver->audioQueue.size_approx() < 3) {
+        // Optimal queue size for low latency vs stability
+        // We target a queue size that covers at least one burst
+        size_t targetQueueSize = std::max<size_t>(2, (g_oboeDriver->framesPerBurst + XAUDIO_NUM_SAMPLES - 1) / XAUDIO_NUM_SAMPLES);
+
+        if (g_oboeDriver && g_oboeDriver->audioQueue.size_approx() < targetQueueSize) {
             if (g_clientCallback) {
                 ctx.ppcContext.r3.u32 = g_clientCallbackParam;
                 g_clientCallback(ctx.ppcContext, g_memory.base);
             }
         } else {
-            // Wait a bit to avoid CPU hogging
-            std::this_thread::sleep_for(std::chrono::microseconds(500));
+            // High-precision sleep/yield based on remaining time
+            std::this_thread::sleep_for(std::chrono::microseconds(250));
         }
     }
 }

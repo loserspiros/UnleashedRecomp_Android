@@ -315,7 +315,7 @@ function(compile_shader FILE_PATH TARGET_NAME)
     cmake_path(GET FILE_PATH STEM VARIABLE_NAME)
     add_custom_command(
         OUTPUT ${FILE_PATH}.spirv.h
-        COMMAND ${DIRECTX_DXC_TOOL} -T ${TARGET_NAME} -HV 2021 -all-resources-bound -spirv -fvk-use-dx-layout ${ARGN} -Fh ${FILE_PATH}.spirv.h ${FILE_PATH} -Vn g_${VARIABLE_NAME}_spirv
+        COMMAND ${DIRECTX_DXC_TOOL} -T ${TARGET_NAME} -HV 2021 -all-resources-bound -O3 -spirv -fvk-use-dx-layout ${ARGN} -Fh ${FILE_PATH}.spirv.h ${FILE_PATH} -Vn g_${VARIABLE_NAME}_spirv
         DEPENDS ${FILE_PATH}
     )
     target_sources(UnleashedRecomp PRIVATE ${FILE_PATH}.spirv.h)
