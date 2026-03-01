@@ -28,7 +28,7 @@ This repository is a recompilation project of the Xbox 360 version of **Sonic Un
 
 ## 🚀 Technical Stack
 
-This fork has been optimized and modernized
+This fork has been optimized and modernized, still WIP so expect build to break.
 
 ### 🏎️ Engine & Performance Optimizations
 - **Advanced Architecture:** Native optimization for **ARMv8.2-A** (including Crypto, CRC, DotProd, and FP16 instructions) on Android.
