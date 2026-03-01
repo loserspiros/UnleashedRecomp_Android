@@ -379,6 +379,7 @@ void InitializeSystem()
     SDL_setenv("SDL_AUDIO_DRIVER", "aaudio", 1);
     SDL_setenv("SDL_VIDEODRIVER", "android", 1);
 
+    perf::InitChoreographer();
     perf::EnableSustainedPerformanceMode(true);
 #endif
 

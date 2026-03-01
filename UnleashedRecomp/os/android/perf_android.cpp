@@ -3,6 +3,7 @@
 #ifdef __ANDROID__
 
 #include <android/native_window.h>
+#include <android/choreographer.h>
 #include <dlfcn.h>
 #include <pthread.h>
 #include <unistd.h>
@@ -29,6 +30,8 @@ typedef int (*PFN_APerformanceHint_reportActualWorkDuration)(APerformanceHintSes
 typedef int (*PFN_AThermal_getCurrentThermalStatus)(AThermalManager* manager);
 typedef AThermalManager* (*PFN_AThermal_acquireManager)(void);
 typedef int (*PFN_ANativeWindow_setFrameRate)(ANativeWindow* window, float frameRate, int8_t compatibility);
+typedef AChoreographer* (*PFN_AChoreographer_getInstance)();
+typedef void (*PFN_AChoreographer_postFrameCallback)(AChoreographer* choreographer, AChoreographer_frameCallback callback, void* data);
 
 static PFN_APerformanceHint_getManager pAPerformanceHint_getManager = nullptr;
 static PFN_APerformanceHint_createSession pAPerformanceHint_createSession = nullptr;
@@ -36,10 +39,13 @@ static PFN_APerformanceHint_reportActualWorkDuration pAPerformanceHint_reportAct
 static PFN_AThermal_getCurrentThermalStatus pAThermal_getCurrentThermalStatus = nullptr;
 static PFN_AThermal_acquireManager pAThermal_acquireManager = nullptr;
 static PFN_ANativeWindow_setFrameRate pANativeWindow_setFrameRate = nullptr;
+static PFN_AChoreographer_getInstance pAChoreographer_getInstance = nullptr;
+static PFN_AChoreographer_postFrameCallback pAChoreographer_postFrameCallback = nullptr;
 
 static APerformanceHintManager* g_hintManager = nullptr;
 static APerformanceHintSession* g_hintSession = nullptr;
 static AThermalManager* g_thermalManager = nullptr;
+static AChoreographer* g_choreographer = nullptr;
 
 static bool g_apisLoaded = false;
 
@@ -54,6 +60,8 @@ static void LoadAndroidAPIs() {
         pAThermal_getCurrentThermalStatus = (PFN_AThermal_getCurrentThermalStatus)dlsym(lib, "AThermal_getCurrentThermalStatus");
         pAThermal_acquireManager = (PFN_AThermal_acquireManager)dlsym(lib, "AThermal_acquireManager");
         pANativeWindow_setFrameRate = (PFN_ANativeWindow_setFrameRate)dlsym(lib, "ANativeWindow_setFrameRate");
+        pAChoreographer_getInstance = (PFN_AChoreographer_getInstance)dlsym(lib, "AChoreographer_getInstance");
+        pAChoreographer_postFrameCallback = (PFN_AChoreographer_postFrameCallback)dlsym(lib, "AChoreographer_postFrameCallback");
     }
     g_apisLoaded = true;
 }
@@ -105,7 +113,6 @@ void ReportFrameTime(int64_t frameTimeNs) {
     EnsureHintSession();
 
     if (g_hintSession && pAPerformanceHint_reportActualWorkDuration) {
-        // Smooth frame time to reduce jitter in frequency scaling
         g_frameTimeHistory.push_back(frameTimeNs);
         if (g_frameTimeHistory.size() > MAX_HISTORY) {
             g_frameTimeHistory.pop_front();
@@ -160,6 +167,17 @@ void MonitorThermals() {
                  LOGFN_WARN("Severe thermal status detected!");
             }
         }
+    }
+}
+
+static void ChoreographerCallback(long frameTimeNanos, void* data) {
+    // This is where vsync-aligned logic would go
+}
+
+void InitChoreographer() {
+    LoadAndroidAPIs();
+    if (pAChoreographer_getInstance) {
+        g_choreographer = pAChoreographer_getInstance();
     }
 }
 

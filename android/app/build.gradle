@@ -20,7 +20,8 @@ android {
                           "-DVCPKG_TARGET_TRIPLET=arm64-android",
                           "-DHOST_TOOLS_DIR=${project.rootDir}/../build_tools/bin",
                           "-DANDROID_PLATFORM=android-26",
-                          "-DANDROID_ARM_NEON=ON"
+                          "-DANDROID_ARM_NEON=ON",
+                          "-DANDROID_LTO=ON"
             }
         }
         ndk {
@@ -28,6 +29,13 @@ android {
         }
     }
     buildTypes {
+        debug {
+            externalNativeBuild {
+                cmake {
+                    cppFlags "-std=c++20 -O0 -g -fsanitize=address,undefined"
+                }
+            }
+        }
         release {
             signingConfig signingConfigs.debug
             minifyEnabled true
