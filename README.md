@@ -2,7 +2,7 @@
     <img src="https://raw.githubusercontent.com/hedge-dev/UnleashedRecompResources/refs/heads/main/images/logo/Logo.png" width="512"/>
 </p>
 
-<h1 align="center">Sonic Unleashed Recompiled: Ultra-Modern Edition</h1>
+<h1 align="center">Sonic Unleashed Recompiled</h1>
 
 <p align="center">
   <strong>The definitive native port of the Xbox 360 classic, ultra-modernized for Android, Windows, and Linux.</strong>
