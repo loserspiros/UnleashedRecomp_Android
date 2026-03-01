@@ -17,7 +17,7 @@
 
 ---
 
-## 🌟 The Ultimate Recompilation
+## 🌟 Sonic Unleashed Android Recompilation
 
 This repository features an ultra-modern, high-performance static recompilation of the Xbox 360 version of **Sonic Unleashed**. By translating original PowerPC binaries into native machine code (**ARM64** / **x86-64**), this port delivers near-native execution speeds. The "Ultra-Modern Edition" pushes technical boundaries with an industry-leading stack, including **Vulkan 1.3**, **Oboe High-Performance Audio**, and **NDK 29** optimizations.
 
