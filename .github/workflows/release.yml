@@ -48,6 +48,9 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y patchelf p7zip-full wget file ccache
+          # Memory optimizations for the build runner
+          sudo sysctl -w vm.swappiness=10
+          sudo sysctl -w vm.vfs_cache_pressure=50
 
       - name: Set up JDK (Android only)
         if: ${{ (inputs.os == 'android' || github.event_name == 'push') }}
@@ -128,12 +131,9 @@ jobs:
         run: |
           chmod +x gradlew
           export ANDROID_NDK_HOME=${ANDROID_SDK_ROOT}/ndk/25.2.9519653
-          ./gradlew assembleRelease --no-daemon --stacktrace
-
-      - name: Memory Optimization
-        run: |
-          echo 'Optimizing memory usage for build environment'
-          # Placeholder for environment-specific memory tweaks
+          # Memory optimization for Gradle
+          export GRADLE_OPTS="-Xmx4096m -Dorg.gradle.daemon=false -Dorg.gradle.parallel=true -Dorg.gradle.workers.max=$(nproc)"
+          ./gradlew assembleRelease --stacktrace
 
       - name: Archive APK (Android only)
         if: ${{ (inputs.os == 'android' || github.event_name == 'push') }}
@@ -166,28 +166,31 @@ jobs:
             ./thirdparty/vcpkg/bootstrap-vcpkg.sh
           fi
 
-      - name: Build Linux/Windows
-        if: ${{ (inputs.os == 'linux') || (inputs.os == 'windows') }}
+      - name: Build Linux
+        if: ${{ (inputs.os == 'linux') }}
         run: |
-          echo "Building for ${{ inputs.os }}"
-          mkdir -p build_${{ inputs.os }}
-          cd build_${{ inputs.os }}
-
-          # Only use HOST_TOOLS_DIR on Linux/Android builds where it was populated
-          HOST_TOOLS_ARG=""
-          if [ -d "../build_tools/bin" ]; then
-            HOST_TOOLS_ARG="-DHOST_TOOLS_DIR=../build_tools/bin"
-          fi
+          echo "Building for Linux"
+          mkdir -p build_linux
+          cd build_linux
 
           cmake .. -DCMAKE_BUILD_TYPE=Release \
             -DCMAKE_TOOLCHAIN_FILE="../thirdparty/vcpkg/scripts/buildsystems/vcpkg.cmake" \
-            $HOST_TOOLS_ARG
+            -DHOST_TOOLS_DIR="../build_tools/bin"
 
-          if [ "$RUNNER_OS" == "Windows" ]; then
-            cmake --build . --config Release --parallel
-          else
-            cmake --build . --config Release --parallel $(nproc)
-          fi
+          cmake --build . --config Release --parallel $(nproc)
+
+      - name: Build Windows
+        if: ${{ (inputs.os == 'windows') }}
+        run: |
+          echo "Building for Windows"
+          # On Windows we build host tools as part of the main build as they are native
+          mkdir -p build_windows
+          cd build_windows
+
+          cmake .. -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_TOOLCHAIN_FILE="../thirdparty/vcpkg/scripts/buildsystems/vcpkg.cmake"
+
+          cmake --build . --config Release --parallel
 
       - name: Upload Artifacts (Linux/Windows)
         if: ${{ inputs.os == 'linux' || inputs.os == 'windows' }}
