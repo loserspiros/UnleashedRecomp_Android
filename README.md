@@ -10,28 +10,31 @@ This is an **experimental, work-in-progress Android port** of [Sonic Unleashed R
 It utilizes static recompilation of the Xbox 360 version of *Sonic Unleashed* to run natively on ARM64 Android devices.
 
 **Status:** 🚧 **Work In Progress (WIP)** 🚧
-**End Goal:** A fully playable, high-performance experience of Sonic Unleashed on Android with native Vulkan rendering and modern enhancements.
+**End Goal:** A fully playable, high-performance experience of Sonic Unleashed on Android with native Vulkan rendering, touch controls, and modern enhancements.
 
-## Key Differences & Improvements
+## Key Features & Improvements
 
 Compared to the original PC version, this fork introduces several architectural changes and optimizations:
 
 - **Modular Kernel implementation:** The monolithic `imports.cpp` has been refactored into modular components (`threading.cpp`, `synchronization.cpp`, `io/nt.cpp`, etc.) for better maintainability and isolated testing.
+- **Native Android UI & Input:**
+    - **Custom Touch Controls:** Native on-screen overlay for touch-only gameplay.
+    - **Flexible Controller Support:** Compatible with Xbox, PlayStation, and generic HID controllers with selectable button icons.
 - **Advanced File System Support:** Native implementation of Xbox 360 **STFS** and **SVOD** (XContent) parsing, allowing the game to read assets directly from container files with optimized memory-mapped I/O.
 - **Optimized Mod Loading:** Implemented a thread-local mod lookup cache (`CachedArchivePath`) in the `ModLoader` to significantly reduce file system overhead during gameplay.
 - **Enhanced Security & Stability:** Hardened guest-to-host memory copies in the kernel (e.g., `fillFindData`) to prevent buffer overflows and improve host-side robustness.
 - **Improved Build Pipeline:** Optimized the recompilation batch size (50 instructions per file) to reduce build artifacts and improve compilation speed on resource-constrained CI environments.
-- **Vulkan-First Architecture:** Tailored rendering logic specifically for Vulkan to ensure maximum compatibility and performance on mobile GPUs.
+- **Vulkan-First Architecture:** Tailored rendering logic specifically for **Vulkan 1.2** to ensure maximum compatibility and performance on mobile GPUs.
 - **Optimized Asset Integrity:** Uses streaming SHA256 (PicoSHA2) and XXH3 for fast and memory-efficient file verification during installation.
 
-## Android Device Requirements (Based on Code)
+## Android Device Requirements (Verified)
 
-- **Architecture:** ARMv8-A 64-bit (ARM64 / `arm64-v8a`) **REQUIRED**.
-- **OS Version:** Android 8.0 (Oreo, API 26)+ or higher.
+- **Architecture:** ARMv8-A 64-bit (ARM64 / `arm64-v8a`) **REQUIRED**. (32-bit devices are not supported).
+- **OS Version:** Android 8.0 (Oreo, API 26) or higher.
 - **GPU:** Vulkan 1.2 support **REQUIRED**.
-- **RAM:** 4 GB Minimum (6 GB+ strongly recommended).
-- **Storage:** **10-15 GB** of high-speed internal storage for game assets and shader caches.
-- **Audio:** Utilizes **AAudio / Oboe** backends for low-latency audio performance on modern Android devices.
+- **RAM:** 4 GB Minimum (6 GB+ strongly recommended). The app allocates a full 4GB virtual address space for the guest memory.
+- **Storage:** **10-15 GB** of high-speed internal storage for game assets, updates, DLC, and shader caches.
+- **Audio:** Utilizes **AAudio / Oboe** backends for low-latency audio performance.
 
 ## How to Build
 
@@ -53,9 +56,9 @@ The build system requires original game files to be placed in a `private/` direc
 #### Prerequisites (Dependencies)
 You must have the following tools installed on your host system (Linux or macOS):
 - **Build Essentials:** `gcc`, `g++`, `cmake` (3.20+), `git`, `wget`, `unzip`.
-- **System Libraries:** `libtbb-dev` (for parallel processing).
+- **System Libraries:** `libtbb-dev` (Intel Threading Building Blocks, required for GCC parallel builds).
 - **Android Tools:** Android SDK and **NDK 25.2.9519653**.
-- **Utility:** `patchelf` (optional, for tool optimization).
+- **Utility:** `patchelf` (Used to set RPATH for host tools).
 
 #### Step 1: Clone the Repository
 ```bash
@@ -63,9 +66,9 @@ git clone --recursive https://github.com/yourusername/UnleashedRecomp-Android.gi
 cd UnleashedRecomp-Android
 ```
 
-#### Step 2: Initialize Submodules & Build Tools
+#### Step 2: Build Host Tools
+These tools (Recompiler, Shader Compiler, etc.) are needed to process assets during the APK build.
 ```bash
-# Set up host tools (Recompiler and asset handlers)
 chmod +x ./build_tools.sh
 ./build_tools.sh
 ```
@@ -77,11 +80,10 @@ export ANDROID_NDK_HOME=/path/to/android-sdk/ndk/25.2.9519653
 ```
 
 #### Step 4: Prepare Assets
-Place your `default.xex` and other game files in the `private/` folder as described in the "Prepare Game Assets" section.
+Ensure your game files are in the `private/` folder.
 
 #### Step 5: Build the APK
 ```bash
-# This script applies patches, builds libraries, and compiles the Android app
 chmod +x ./build_android.sh
 ./build_android.sh
 ```
