@@ -19,7 +19,7 @@
 
 ## 🌟 Sonic Unleashed Android Recompilation
 
-This repository features an ultra-modern, high-performance static recompilation of the Xbox 360 version of **Sonic Unleashed**. By translating original PowerPC binaries into native machine code (**ARM64** / **x86-64**), this port delivers near-native execution speeds. The "Ultra-Modern Edition" pushes technical boundaries with an industry-leading stack, including **Vulkan 1.3**, **Oboe High-Performance Audio**, and **NDK 29** optimizations.
+This repository is a recompilation project of the Xbox 360 version of **Sonic Unleashed**. By translating original PowerPC binaries into native machine code (**ARM64** / **x86-64**). Fork includes Android support with **Vulkan 1.3**, **Oboe High-Performance Audio**, and **NDK 29** optimizations.
 
 > [!IMPORTANT]
 > **Game assets are NOT included.** You must provide your own legally acquired Xbox 360 copy of *Sonic Unleashed* and its updates.
@@ -28,7 +28,7 @@ This repository features an ultra-modern, high-performance static recompilation 
 
 ## 🚀 Technical Stack
 
-This fork has been aggressively optimized and modernized
+This fork has been optimized and modernized
 
 ### 🏎️ Engine & Performance Optimizations
 - **Advanced Architecture:** Native optimization for **ARMv8.2-A** (including Crypto, CRC, DotProd, and FP16 instructions) on Android.
