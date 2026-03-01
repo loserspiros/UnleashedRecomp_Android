@@ -23,6 +23,9 @@ endif()
 function(BIN2C)
     cmake_parse_arguments(BIN2C_ARGS "" "TARGET_OBJ;SOURCE_FILE;DEST_FILE;ARRAY_NAME;COMPRESSION_TYPE" "" ${ARGN})
 
+
+find_package(TBB REQUIRED)
+
     if(NOT BIN2C_ARGS_TARGET_OBJ)
         message(FATAL_ERROR "TARGET_OBJ not specified.")
     endif()
@@ -286,6 +289,7 @@ set_target_properties(UnleashedRecomp PROPERTIES OUTPUT_NAME "main")
 find_package(CURL REQUIRED)
 
 target_link_libraries(UnleashedRecomp PRIVATE
+    TBB::tbb
     fmt::fmt
     libzstd_static
     msdf-atlas-gen::msdf-atlas-gen
@@ -466,4 +470,13 @@ target_include_directories(GuestResourceTest PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
 target_compile_features(GuestResourceTest PRIVATE cxx_std_20)
 
 add_test(NAME GuestResourceTest COMMAND GuestResourceTest)
+endif()
+
+if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+    include(CheckCXXSymbolExists)
+    check_cxx_symbol_exists(_LIBCPP_VERSION version LIBCPP)
+    if(LIBCPP)
+        # Allows using std::execution
+        add_compile_options(-fexperimental-library)
+    endif()
 endif()

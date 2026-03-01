@@ -47,7 +47,7 @@ jobs:
         if: ${{ runner.os == 'Linux' }}
         run: |
           sudo apt-get update
-          sudo apt-get install -y patchelf p7zip-full wget file ccache
+          sudo apt-get install -y patchelf p7zip-full wget file ccache libtbb-dev libcurl4-openssl-dev
           # Memory optimizations for the build runner
           sudo sysctl -w vm.swappiness=10
           sudo sysctl -w vm.vfs_cache_pressure=50
@@ -66,7 +66,7 @@ jobs:
 
       - name: Install Android NDK (Android only)
         if: ${{ (inputs.os == 'android' || github.event_name == 'push') }}
-        run: yes | sdkmanager "ndk;29.0.14206865"
+        run: echo y | sdkmanager "ndk;29.0.14206865"
 
       - name: Apply Patches
         if: ${{ runner.os == 'Linux' }}
