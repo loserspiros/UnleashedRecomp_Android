@@ -4,6 +4,8 @@ if (WIN32)
     option(XENOS_RECOMP_DXIL "Generate DXIL shader cache" ON)
 endif()
 
+find_package(TBB REQUIRED)
+
 set(SMOLV_SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../thirdparty/smol-v/source")
 
 add_executable(XenosRecomp
@@ -19,6 +21,7 @@ add_executable(XenosRecomp
     "${SMOLV_SOURCE_DIR}/smolv.cpp")
 
 target_link_libraries(XenosRecomp PRIVATE
+    TBB::tbb
     Microsoft::DirectXShaderCompiler
     xxHash::xxhash
     libzstd_static

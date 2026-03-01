@@ -13,6 +13,7 @@
 #include <cassert>
 #include <chrono>
 #include <span>
+#include <iterator>
 #include <xbox.h>
 #include <xxhash.h>
 #include <ankerl/unordered_dense.h>
