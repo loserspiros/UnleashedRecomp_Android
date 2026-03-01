@@ -2,49 +2,113 @@
     <img src="https://raw.githubusercontent.com/hedge-dev/UnleashedRecompResources/refs/heads/main/images/logo/Logo.png" width="512"/>
 </p>
 
+<h1 align="center">Sonic Unleashed Recompiled: Ultra-Modern Edition</h1>
+
+<p align="center">
+  <strong>The definitive native port of the Xbox 360 classic, ultra-modernized for Android, Windows, and Linux.</strong>
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/Platform-Android_|_Windows_|_Linux-blue?style=for-the-badge&logo=android" alt="Platforms"/>
+  <img src="https://img.shields.io/badge/Vulkan-1.3-red?style=for-the-badge&logo=vulkan" alt="Vulkan"/>
+  <img src="https://img.shields.io/badge/Audio-Oboe_/_AAudio-green?style=for-the-badge" alt="Audio"/>
+  <img src="https://img.shields.io/badge/Status-Experimental_WIP-orange?style=for-the-badge" alt="Status"/>
+</p>
+
 ---
 
-# Unleashed Recompiled: Android Edition
+## 🌟 The Ultimate Recompilation
 
-This is an **unofficial Android port** of *Sonic Unleashed Recompiled* (originally for PC).  
-It is based on the static recompilation of the Xbox 360 version of Sonic Unleashed.
+This repository features an ultra-modern, high-performance static recompilation of the Xbox 360 version of **Sonic Unleashed**. By translating original PowerPC binaries into native machine code (**ARM64** / **x86-64**), this port delivers near-native execution speeds. The "Ultra-Modern Edition" pushes technical boundaries with an industry-leading stack, including **Vulkan 1.3**, **Oboe High-Performance Audio**, and **NDK 29** optimizations.
 
-**Important:** This project does **not include any game assets**. You must provide them from a legally acquired copy.
+> [!IMPORTANT]
+> **Game assets are NOT included.** You must provide your own legally acquired Xbox 360 copy of *Sonic Unleashed* and its updates.
 
-## Features
+---
 
-- Full Android support (ARM64 only)  
-- High-performance rendering via **Vulkan**  
-- Touch and controller input  
-- Mod support via Hedge Mod Manager (limited on Android)  
-- High-resolution and ultrawide support (device dependent)  
-- Core gameplay logic ported from PC recompilation  
+## 🚀 Cutting-Edge Technical Stack
 
-## Android Device Requirements
+This fork has been aggressively optimized and modernized far beyond traditional ports:
 
-- **CPU:** ARMv8-A 64-bit (ARM64) required  
-- **RAM:** 4 GB minimum, 6+ GB recommended  
-- **GPU:** Vulkan 1.1 support required  
-- **Storage:** 6–10 GB for game assets  
-- **OS:** Android 10+  
+### 🏎️ Engine & Performance Optimizations
+- **Advanced Architecture:** Native optimization for **ARMv8.2-A** (including Crypto, CRC, DotProd, and FP16 instructions) on Android.
+- **Ultra-Aggressive Compilation:** Utilizes **Full LTO (Link Time Optimization)**, **O3** optimization levels, and **Fast Math** for maximum frame rates.
+- **Parallel Execution Engine:** Powered by **Intel TBB** and C++17 parallel algorithms to accelerate asset loading, hashing, and GPU pipeline pre-compilation.
+- **Background Pipeline Pre-compilation:** Background compilation of graphics pipelines (MSAA, Blur, etc.) ensures a stutter-free experience.
+- **Zero-Allocation I/O:** High-performance **STFS** and **SVOD** parsing with zero-allocation string handling and memory-mapped I/O.
 
-> Devices without Vulkan support are not compatible. Older ARM32 devices are not supported.
+### 🎮 The Android Experience (Ultra-Modern)
+- **Vulkan 1.3:** Utilizes the latest Vulkan standards for superior rendering efficiency and modern GPU features.
+- **Oboe High-Performance Audio:** Integrated Google's **Oboe** library for the lowest possible audio latency using **AAudio** and **OpenSL ES**.
+- **Sustained Performance Mode:** Native Android API integration to lock CPU/GPU clocks and prevent thermal throttling.
+- **Enhanced HID & Input:** Refined controller handling with dynamic button prompt switching (Xbox/PS) and optimized multi-touch overlay.
 
-## How to Install / Build APK
+### 🖥️ Desktop & Modern UX
+- **Cross-Platform Mastery:** Full native support for **Windows** and **Linux (including Steam Deck)**.
+- **Visual Fidelity:** Native support for **Resolution Scaling**, **Ultrawide Aspect Ratio** patches, and high-fidelity shadow resolution (up to 8K).
+- **Modding Support:** Seamless integration with the **Hedge Mod Manager** ecosystem.
 
-### Build from Source using GitHub Actions
+---
 
-1. Fork or clone this repository.
-2. Place your legally acquired Xbox 360 game files in the proper asset directories.
-3. Push a branch to your fork and trigger the `release.yml` workflow.
-4. The workflow will build the APK automatically.
-5. Download the generated APK from the workflow artifacts.
-6. Install the APK on your Android device.
+## 📋 System Requirements
 
-### Manual Build (Optional)
+| Requirement | Android | Windows / Linux |
+| :--- | :--- | :--- |
+| **Architecture** | ARMv8.2-A 64-bit REQUIRED | x86-64 (Amd64) |
+| **OS Version** | Android 8.0+ (Targeting Android 15) | Win 10/11 / Ubuntu 24.04+ |
+| **Graphics API** | Vulkan 1.3 REQUIRED | Vulkan 1.2+ |
+| **RAM** | 4 GB (Strict Guest Allocation) | 8 GB+ Recommended |
+| **Storage** | 10-15 GB (High-speed internal) | 10-15 GB |
 
-1. Install Android Studio with NDK and CMake.  
-2. Configure the Gradle build with your assets path.  
-3. Build the APK using:
-   ```bash
-   ./gradlew assembleRelease
+---
+
+## 🚀 Installation & Build Guide
+
+### 🌐 GitHub Actions (Recommended)
+Build for any platform without local setup:
+1.  **Fork** this repository.
+2.  Go to the **Actions** tab -> **Release** workflow -> **Run workflow**.
+3.  Select your target OS (**Android, Windows, or Linux**).
+4.  **Dynamic Asset Ingestion:** Provide URLs for your assets (**ZIP, ISO, or XEX**) — the CI extracts and prepares them automatically!
+
+### 💻 Manual Build (Developer Path)
+
+#### 📦 Prerequisites (Common)
+- `cmake` (3.22+), `git`, `ninja-build`, `libtbb-dev`.
+- **Android:** Android SDK, **NDK 29.0.14206865**, **Java 17**.
+- **Windows:** **Visual Studio 2022** with **Clang-cl** and **LLVM 18+**.
+- **Linux:** `gcc-13` / `g++-13` and Vulkan SDK.
+
+#### 🛠️ Build Steps
+
+##### **Windows**
+```powershell
+cmake --preset x64-Clang-Release
+cmake --build out/build/x64-Clang-Release --config Release --parallel
+```
+
+##### **Linux**
+```bash
+cmake --preset linux-release
+cmake --build out/build/linux-release --config Release --parallel
+
+# Optional Flatpak
+flatpak-builder --user --install --force-clean build flatpak/io.github.hedge_dev.unleashedrecomp.json
+```
+
+##### **Android**
+```bash
+# 1. Build host-side tools first
+chmod +x ./build_tools.sh && ./build_tools.sh
+
+# 2. Set NDK path (REQUIRED: 29.0.14206865)
+export ANDROID_NDK_HOME=/path/to/android-sdk/ndk/29.0.14206865
+
+# 3. Compile the APK
+chmod +x ./build_android.sh && ./build_android.sh
+```
+
+---
+
+## ⚖️ Disclaimer
+*Sonic Unleashed Recompiled* is an unofficial fan-made project. It is not affiliated with, authorized, or endorsed by SEGA® or Sonic Team™. This project is intended for educational purposes and requires legally owned game assets.
