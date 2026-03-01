@@ -5,19 +5,19 @@
 <h1 align="center">Unleashed Recompiled: Android Edition</h1>
 
 <p align="center">
-  <strong>Static recompilation of Sonic Unleashed (Xbox 360) running natively on Android.</strong>
+  <strong>High-performance static recompilation of Sonic Unleashed (Xbox 360) running natively on Android, Linux, and Windows.</strong>
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Platform-Android-green?style=flat-square&logo=android" alt="Platform"/>
-  <img src="https://img.shields.io/badge/Architecture-ARM64-blue?style=flat-square" alt="Arch"/>
+  <img src="https://img.shields.io/badge/Platform-Android_|_Linux_|_Windows-blue?style=flat-square" alt="Platforms"/>
+  <img src="https://img.shields.io/badge/Architecture-ARM64_|_x86--64-blue?style=flat-square" alt="Arch"/>
   <img src="https://img.shields.io/badge/Graphics-Vulkan_1.2-red?style=flat-square&logo=vulkan" alt="Vulkan"/>
   <img src="https://img.shields.io/badge/Status-Work_In_Progress-orange?style=flat-square" alt="Status"/>
 </p>
 
 ---
 
-This project is an **experimental, work-in-progress port** of [Sonic Unleashed Recompiled](https://github.com/hedge-dev/UnleashedRecomp) to the Android platform. It leverages static recompilation to translate Xbox 360 PowerPC instructions into native ARM64 code, delivering high-performance gameplay on modern mobile devices.
+This project is an **experimental, high-performance port** of [Sonic Unleashed Recompiled](https://github.com/hedge-dev/UnleashedRecomp). It utilizes static recompilation to translate Xbox 360 PowerPC instructions into native code, enabling the game to run with modern enhancements on Android (ARM64) as well as Linux and Windows (x86-64).
 
 > [!IMPORTANT]
 > **This repository does NOT contain any game assets.** You must provide your own legally acquired copy of *Sonic Unleashed* for the Xbox 360.
@@ -26,24 +26,30 @@ This project is an **experimental, work-in-progress port** of [Sonic Unleashed R
 
 ## ✨ Key Features & Enhancements
 
-This fork introduces significant architectural improvements and mobile-specific optimizations:
+This fork introduces significant architectural improvements, "under-the-hood" performance optimizations, and multi-platform support:
 
-### 🛠️ Core & Kernel
-- **Modular Architecture:** Refactored the monolithic kernel into clean, modular components (`threading`, `synchronization`, `I/O`) for improved stability and maintainability.
-- **Advanced File System:** Native support for Xbox 360 **STFS** and **SVOD** (XContent) parsing with memory-mapped I/O for lightning-fast asset loading.
-- **Modding Support:** Integrated `ModLoader` with a thread-local lookup cache to minimize file system overhead during modded gameplay.
-- **Universal Save Redirection:** Automatically manages and redirects save data to ensure persistence across updates and mod configurations.
-- **Achievement System:** Includes a native, built-in **Achievement Overlay** and manager, faithfully recreating the original Xbox 360 experience.
+### 🚀 Performance & Parallelism
+- **Parallel Execution Engine:** Leverages C++17 parallel algorithms (`std::execution`) and Intel TBB to accelerate heavy tasks like asset size computation and GPU pipeline pre-compilation.
+- **O(1) Achievement Lookups:** Refactored the Achievement Manager to use optimized hash-based lookups, eliminating redundant iteration overhead.
+- **GPU Pipeline Optimization:** Highly optimized object iteration during shader pre-compilation to reduce stutter and improve load times.
+- **Zero-Allocation File Parsing:** Optimized **STFS** and **SVOD** parsing to eliminate redundant string allocations and utilize memory-mapped I/O.
+- **Thread-Local Mod Caching:** Implemented a thread-local lookup cache in the `ModLoader` to drastically reduce file system contention in modded environments.
 
-### 🎮 Mobile Experience
-- **Vulkan-First Rendering:** Optimized pipeline specifically for **Vulkan 1.2**, ensuring the best performance on modern mobile GPUs.
-- **Native Touch Controls:** Fully customizable on-screen overlay designed for mobile-first gameplay.
+### 🛠️ Architecture & Core
+- **Modular Kernel:** The monolithic kernel has been refactored into modular units (`threading`, `synchronization`, `I/O`, `memory`) for superior stability and easier debugging.
+- **Refactored Recompiler:** The instruction recompiler now uses a robust `RecompileArgs` architecture, improving code generation quality and maintainability.
+- **Universal Save Redirection:** Seamlessly manages save data across different OSs and mod profiles.
+- **Built-in Achievement System:** A native, faithfully recreated Xbox 360 Achievement Overlay and manager.
+
+### 🎮 Mobile & Modern UX
+- **Android:** Native ARM64 support with custom **Touch Controls**, Vulkan 1.2, and low-latency **AAudio/Oboe** backends.
+- **Visual Enhancements:** Native support for **Resolution Scaling**, **Aspect Ratio Patches** (including Ultrawide support), and **High-Refresh-Rate** displays.
 - **Controller Support:** Plug-and-play support for Xbox, PlayStation, and generic Bluetooth/HID controllers with dynamic icon switching.
-- **Low-Latency Audio:** Utilizes **AAudio** and **Oboe** backends for perfectly synced sound effects and music.
+- **Hedge Mod Manager:** Support for mods via standard community tools (limited on Android).
 
 ---
 
-## 📱 Device Requirements
+## 📱 Device Requirements (Android)
 
 | Requirement | Minimum Specification | Recommended |
 | :--- | :--- | :--- |
@@ -51,35 +57,33 @@ This fork introduces significant architectural improvements and mobile-specific 
 | **OS Version** | Android 8.0 (API 26) | Android 11+ |
 | **Graphics API** | Vulkan 1.2 | Vulkan 1.3 |
 | **RAM** | 4 GB (Strict Guest Allocation) | 8 GB+ |
-| **Storage** | 10 GB (Internal Storage) | 15 GB+ (UFS 3.0+) |
+| **Storage** | 10 GB (Internal Storage) | 15 GB+ (UFS 3.1+) |
 
 ---
 
 ## 🚀 Getting Started
 
 ### 1. Prepare Your Assets
-Create a `private/` directory in the project root and place the following files:
+Create a `private/` directory in the project root and place the following:
 - `default.xex` — The main game executable.
 - `default.xexp` — Title update (optional).
 - `shader.ar` — DLC or shader archives (optional).
 - Game data containers (STFS/SVOD).
 
 ### 2. Build via GitHub Actions (Easy)
-The CI pipeline is highly robust and can ingest assets automatically:
+Our CI pipeline is designed for robustness and ease of use:
 1. **Fork** this repository.
-2. Navigate to the **Actions** tab.
-3. Select the **Release** workflow and click **Run workflow**.
-4. **Automated Asset Ingestion:** You can provide URLs for your `game_url`, `update_url`, and `dlc_url`. The workflow supports **ZIP, ISO, and XEX** formats and will automatically extract and prepare them for the build.
-5. Download the final APK from the **Artifacts** section.
+2. Go to the **Actions** tab and select the **Release** workflow.
+3. Click **Run workflow** and select your target OS (**Android, Linux, or Windows**).
+4. **Dynamic Data Input:** You can provide URLs for your assets. The workflow supports **ZIP, ISO, and XEX** formats and will automatically extract and prepare them.
+5. Download the final artifact once the build completes.
 
-### 3. Manual Build (Advanced)
-For developers building locally on Linux or macOS.
-
+### 3. Manual Build (Linux/Android)
 #### 📦 Dependencies
-- `gcc`, `g++`, `cmake` (3.20+), `git`, `wget`, `unzip`
-- `libtbb-dev` (Intel Threading Building Blocks)
-- Android SDK & **NDK 25.2.9519653**
-- `patchelf`
+- `gcc 13+`, `g++ 13+`, `cmake` (3.20+), `git`, `wget`, `unzip`
+- `libtbb-dev` (Intel Threading Building Blocks — **REQUIRED** for parallel optimizations)
+- **Java 17** (Temurin recommended)
+- Android SDK & **NDK 25.2.9519653** (For Android builds)
 
 #### 🛠️ Build Steps
 ```bash
@@ -87,20 +91,22 @@ For developers building locally on Linux or macOS.
 git clone --recursive https://github.com/yourusername/UnleashedRecomp-Android.git
 cd UnleashedRecomp-Android
 
-# 2. Build host-side tools (Recompiler, asset handlers, etc.)
+# 2. Build host-side tools
 chmod +x ./build_tools.sh
 ./build_tools.sh
 
-# 3. Configure environment
-export ANDROID_NDK_HOME=/path/to/android-sdk/ndk/25.2.9519653
-
-# 4. Compile the APK
-chmod +x ./build_android.sh
+# 3. Configure and Build
+# For Android:
+export ANDROID_NDK_HOME=/path/to/ndk
 ./build_android.sh
+
+# For Linux:
+mkdir build && cd build
+cmake .. -DCMAKE_BUILD_TYPE=Release
+make -j$(nproc)
 ```
-Find your APK at: `android/app/build/outputs/apk/debug/app-debug.apk`
 
 ---
 
 ## ⚖️ Disclaimer
-*Unleashed Recompiled: Android Edition* is an unofficial fan-made project. It is not affiliated with, authorized, or endorsed by SEGA® or Sonic Team™. This project is intended for educational and interoperability purposes. All trademarks belong to their respective owners.
+*Unleashed Recompiled: Android Edition* is an unofficial fan-made project. It is not affiliated with, authorized, or endorsed by SEGA® or Sonic Team™. All trademarks belong to their respective owners.
