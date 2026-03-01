@@ -30,12 +30,12 @@ This fork introduces significant architectural improvements, mobile-specific opt
 
 ### 🚀 Android & Mobile Performance
 - **Sustained Performance Mode:** Integrated Android-specific performance hints to lock CPU/GPU frequencies and prevent thermal throttling.
-- **Optimized Android I/O:** Utilizes native Android `readlink` and `getcwd` with UTF-8 path handling for reliable asset resolution.
+- **Optimized Android I/O & Drivers:** Native implementation of Android-specific logic for file system resolution, logging, and thread priority management.
 - **Low-Latency Audio:** Fully integrated **AAudio** and **Oboe** backends for perfectly synced sound effects and music.
 - **Touch & Controller Support:** Native on-screen touch overlay and plug-and-play support for Xbox/PlayStation controllers with dynamic icon switching.
 
 ### 🛠️ Core & Kernel Optimizations
-- **Modular Kernel Architecture:** Monolithic imports have been refactored into modular units (`threading`, `synchronization`, `I/O`) for superior stability.
+- **Modular Kernel Architecture:** Monolithic imports have been refactored into modular units (`threading`, `synchronization`, `I/O`, `memory`) for superior stability.
 - **Parallel Execution Engine:** Leverages C++17 parallel algorithms and Intel TBB for heavy tasks like asset hashing and GPU pipeline pre-compilation.
 - **O(1) Achievement System:** Optimized hash-based lookups for achievements, eliminating redundant iteration overhead.
 - **Advanced File System:** Native support for Xbox 360 **STFS** and **SVOD** parsing with zero-allocation string handling and memory-mapped I/O.
@@ -66,12 +66,13 @@ This fork introduces significant architectural improvements, mobile-specific opt
 Create a `private/` directory in the project root and place: `default.xex`, `default.xexp` (optional), `shader.ar` (optional), and your Game data containers (STFS/SVOD).
 
 ### 2. Build via GitHub Actions (Recommended)
-Our CI pipeline supports all target OSs:
+Our CI pipeline is designed for robustness and ease of use:
 1. **Fork** this repository.
-2. Go to the **Actions** tab -> **Release** workflow -> **Run workflow**.
-3. Select your target OS (**Android, Windows, or Linux**).
-4. **Dynamic Data Input:** Provide URLs for your assets. The workflow supports **ZIP, ISO, and XEX** formats and will automatically prepare them.
-5. Download the final artifact once the build completes.
+2. Navigate to the **Actions** tab.
+3. Select the **Release** workflow and click **Run workflow**.
+4. Select your target OS (**Android, Windows, or Linux**).
+5. **Dynamic Data Input:** You can provide URLs for your assets. The workflow supports **ZIP, ISO, and XEX** formats and will automatically extract and prepare them.
+6. Download the final artifact once the build completes.
 
 ### 3. Manual Build (Step-by-Step)
 
@@ -79,7 +80,7 @@ Our CI pipeline supports all target OSs:
 - `gcc 13+`, `g++ 13+`, `cmake` (3.20+), `git`, `libtbb-dev`, **Java 17**, NDK 25.2.9519653.
 
 #### 📦 Dependencies (Windows)
-- **Visual Studio 2022** with "Desktop development with C++".
+- **Visual Studio 2022** (with "Desktop development with C++" and "Game development with C++").
 - **CMake** (3.20+).
 - **vcpkg** (Included in submodules).
 
@@ -89,15 +90,19 @@ Our CI pipeline supports all target OSs:
 git clone --recursive https://github.com/yourusername/UnleashedRecomp-Android.git
 cd UnleashedRecomp-Android
 
-# 2. Build for Windows (PowerShell)
+# 2. Build for Windows (Using PowerShell)
 mkdir build; cd build
 cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE="../thirdparty/vcpkg/scripts/buildsystems/vcpkg.cmake"
 cmake --build . --config Release --parallel
 
-# 3. Build for Android (Linux)
-chmod +x ./build_tools.sh ./build_android.sh
+# 3. Build for Android (Using Linux)
+# Set your NDK path
+export ANDROID_NDK_HOME=/path/to/android-sdk/ndk/25.2.9519653
+# Build host tools first
+chmod +x ./build_tools.sh
 ./build_tools.sh
-export ANDROID_NDK_HOME=/path/to/ndk
+# Build the APK
+chmod +x ./build_android.sh
 ./build_android.sh
 ```
 
