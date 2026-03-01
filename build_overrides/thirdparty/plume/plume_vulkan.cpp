@@ -3854,8 +3854,14 @@ namespace plume {
         portabilityFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PORTABILITY_SUBSET_FEATURES_KHR;
         portabilityFeatures.pNext = featuresChain;
         featuresChain = &portabilityFeatures;
+        VkPhysicalDeviceVulkan13Features vulkan13Features = {};
+        vulkan13Features.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES;
+        vulkan13Features.dynamicRendering = VK_TRUE;
+        vulkan13Features.synchronization2 = VK_TRUE;
 
         VkPhysicalDeviceFeatures2 deviceFeatures = {};
+        vulkan13Features.pNext = featuresChain;
+        featuresChain = &vulkan13Features;
         deviceFeatures.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_FEATURES_2;
         deviceFeatures.pNext = featuresChain;
         vkGetPhysicalDeviceFeatures2(physicalDevice, &deviceFeatures);
@@ -3931,6 +3937,8 @@ namespace plume {
             createDeviceChain = &portabilityFeatures;
         }
 
+        vulkan13Features.pNext = createDeviceChain;
+        createDeviceChain = &vulkan13Features;
         // Retrieve the information for the queue families.
         uint32_t queueFamilyCount = 0;
         vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &queueFamilyCount, nullptr);
@@ -4433,7 +4441,7 @@ namespace plume {
         appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
         appInfo.pEngineName = "plume";
         appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
-        appInfo.apiVersion = VK_API_VERSION_1_2;
+        appInfo.apiVersion = VK_API_VERSION_1_3;
 
         VkInstanceCreateInfo createInfo = {};
         createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;

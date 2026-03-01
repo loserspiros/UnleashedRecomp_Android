@@ -3,7 +3,7 @@ apply plugin: 'com.android.application'
 android {
     namespace "com.hedge_dev.UnleashedRecomp"
     compileSdkVersion 34
-    ndkVersion "25.2.9519653"
+    ndkVersion "27.0.12077973"
     defaultConfig {
         applicationId "com.hedge_dev.UnleashedRecomp"
         minSdkVersion 26

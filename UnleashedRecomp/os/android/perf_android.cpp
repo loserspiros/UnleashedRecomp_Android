@@ -109,10 +109,10 @@ void ReportFrameTime(int64_t frameTimeNs) {
 
 void SetThreadPriority(bool isRenderThread) {
     if (isRenderThread) {
-        // High priority
+        // High priority for render thread
         setpriority(PRIO_PROCESS, 0, -10);
     } else {
-        // Lower priority
+        // Balanced priority for other threads
         setpriority(PRIO_PROCESS, 0, 0);
     }
 }
@@ -150,7 +150,7 @@ void MonitorThermals() {
         if (g_thermalManager) {
             int status = pAThermal_getCurrentThermalStatus(g_thermalManager);
             if (status >= 3) { // ATHERMAL_STATUS_SEVERE
-                 // Logic to reduce GPU quality could go here
+                 LOGFN_WARN("Severe thermal status detected!");
             }
         }
     }
