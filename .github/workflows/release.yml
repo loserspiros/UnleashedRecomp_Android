@@ -112,7 +112,7 @@ jobs:
           ./build_tools.sh
 
       - name: Download Data
-        if: ${{ runner.os == "Linux" && (github.event_name == "workflow_dispatch" || env.ASSET_REPO != "") }}
+        if: ${{ runner.os == 'Linux' && (github.event_name == 'workflow_dispatch' || env.ASSET_REPO != '') }}
         env:
           GAME_URL: ${{ inputs.game_url }}
           UPDATE_URL: ${{ inputs.update_url }}
