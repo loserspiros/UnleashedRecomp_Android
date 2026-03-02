@@ -22,7 +22,6 @@ reset_submodule() {
 }
 
 # Reset all submodules to ensure a clean state before applying overrides
-# This is crucial for local dev and CI idempotency
 reset_submodule "tools/XenonRecomp" "XenonRecomp"
 reset_submodule "tools/XenosRecomp" "XenosRecomp"
 reset_submodule "thirdparty/nativefiledialog-extended" "nativefiledialog-extended"
@@ -39,5 +38,9 @@ fi
 echo "Setting executable permissions for DXC binaries..."
 find tools/XenosRecomp/thirdparty/dxc-bin/bin -type f -name "dxc-linux" -exec chmod +x {} +
 find tools/XenosRecomp/thirdparty/dxc-bin/bin -type f -name "dxc-macos" -exec chmod +x {} +
+
+echo "Ensuring scripts are executable..."
+chmod +x build_android.sh build_tools.sh build_overrides/apply_patches.sh 2>/dev/null || true
+find tools -name "*.sh" -o -name "*.py" -exec chmod +x {} +
 
 echo "=== Overrides applied successfully ==="

@@ -2,119 +2,107 @@
 import sys
 import os
 import struct
+import concurrent.futures
+
+def extract_file(file_path, output_dir, filename, start_block, size, file_size_on_disk):
+    out_path = os.path.join(output_dir, filename)
+    out_subdir = os.path.dirname(out_path)
+    if out_subdir and not os.path.exists(out_subdir):
+        os.makedirs(out_subdir, exist_ok=True)
+
+    try:
+        with open(file_path, 'rb') as f:
+            with open(out_path, 'wb') as out_f:
+                remaining = size
+                current_block = start_block
+
+                while remaining > 0:
+                    phys_block = current_block + (current_block // 170) + (current_block // 28900)
+                    offset = 0xC000 + phys_block * 0x1000
+
+                    if offset + min(0x1000, remaining) > file_size_on_disk:
+                        return filename, False, "Beyond file size"
+
+                    f.seek(offset)
+                    chunk_size = min(0x1000, remaining)
+                    data = f.read(chunk_size)
+
+                    if not data or len(data) < chunk_size:
+                        return filename, False, f"Unexpected EOF at block {current_block}"
+
+                    out_f.write(data)
+                    remaining -= len(data)
+                    current_block += 1
+
+        if os.path.getsize(out_path) != size:
+            return filename, False, "Size mismatch"
+
+        return filename, True, None
+    except Exception as e:
+        return filename, False, str(e)
 
 def extract_stfs(file_path, output_dir):
     if not os.path.exists(output_dir):
-        os.makedirs(output_dir)
+        os.makedirs(output_dir, exist_ok=True)
 
-    print(f"Opening {file_path}...")
+    file_size_on_disk = os.path.getsize(file_path)
+    print(f"Opening STFS: {file_path} (Size: {file_size_on_disk} bytes)...")
+
     try:
         with open(file_path, 'rb') as f:
             magic = f.read(4)
-            if magic == b'Rar!':
-                print(f"Error: Input file {file_path} is a RAR archive, not an STFS container.")
-                print("Please extract it first using '7z x <file>'.")
-                return False
-
             if magic not in [b'LIVE', b'PIRS', b'CON ']:
-                print(f"Error: Invalid STFS magic: {magic} (hex: {magic.hex()})")
+                print(f"Error: Invalid STFS magic: {magic}")
                 return False
 
-            # File table at 0xC000 (Block 0)
             f.seek(0xC000)
             file_table = f.read(0x1000)
+            if not file_table or len(file_table) < 0x1000:
+                print("Error: Could not read file table.")
+                return False
 
-            extracted_count = 0
-            overall_success = True
-
+            entries = []
             for i in range(0, len(file_table), 0x40):
                 entry = file_table[i:i+0x40]
-                if entry[0] == 0:
-                    break
+                if entry[0] == 0: break
 
-                filename_bytes = entry[0:0x28]
-                filename = filename_bytes.split(b'\0', 1)[0].decode('utf-8', errors='ignore')
-                if not filename:
-                    continue
+                name_bytes = entry[0:0x28]
+                filename = name_bytes.split(b'\0', 1)[0].decode('utf-8', errors='ignore').strip()
+                if not filename: continue
 
-                # Start Block (0x2F, 3 bytes) - Little Endian (unlike most STFS fields)
                 sb_bytes = entry[0x2F:0x32]
-                # Size (0x34, 4 bytes) - Big Endian
                 size_bytes = entry[0x34:0x38]
-
                 start_block = sb_bytes[0] | (sb_bytes[1] << 8) | (sb_bytes[2] << 16)
                 size = struct.unpack('>I', size_bytes)[0]
 
-                print(f"Extracting {filename}: Start Block {start_block}, Size {size}")
+                if size > 0:
+                    entries.append((filename, start_block, size))
 
-                if size > 1024 * 1024 * 1024: # 1GB check
-                    print(f"Warning: File {filename} size {size} seems unusually large.")
-
-                out_path = os.path.join(output_dir, filename)
-                file_success = True
-
-                with open(out_path, 'wb') as out_f:
-                    remaining = size
-                    current_block = start_block
-                    current_pos = f.tell()
-
-                    while remaining > 0:
-                        # Calculate physical offset
-                        phys_block = current_block + (current_block // 170) + (current_block // 28900)
-                        offset = 0xC000 + phys_block * 0x1000
-
-                        if current_pos != offset:
-                            f.seek(offset)
-                            current_pos = offset
-
-                        chunk_size = min(0x1000, remaining)
-                        data = f.read(chunk_size)
-                        if not data or len(data) < chunk_size:
-                            print(f"Error: Unexpected end of file while reading {filename} at offset {offset}")
-                            print(f"Expected {chunk_size} bytes, got {len(data) if data else 0} bytes.")
-                            file_success = False
-                            break
-                        out_f.write(data)
-
-                        read_len = len(data)
-                        remaining -= read_len
-                        current_pos += read_len
-                        current_block += 1
-
-                if not file_success:
-                    print(f"Error: Extraction failed for {filename}. Deleting incomplete file.")
-                    try:
-                        os.remove(out_path)
-                    except OSError:
-                        pass
-                    overall_success = False
-                elif os.path.getsize(out_path) == 0 and size > 0:
-                    print(f"Error: Extracted file {filename} is 0 bytes but expected {size}.")
-                    try:
-                        os.remove(out_path)
-                    except OSError:
-                        pass
-                    overall_success = False
-
-                extracted_count += 1
-
-            if extracted_count == 0:
-                print("No files found in STFS package.")
+            if not entries:
+                print("No files found in STFS.")
                 return False
 
-            if not overall_success:
-                 print("Some files failed to extract.")
-                 return False
+            print(f"Found {len(entries)} files. Extracting in parallel...")
+            extracted_count = 0
+            with concurrent.futures.ThreadPoolExecutor() as executor:
+                futures = [executor.submit(extract_file, file_path, output_dir, *entry, file_size_on_disk) for entry in entries]
+                for future in concurrent.futures.as_completed(futures):
+                    filename, success, error = future.result()
+                    if success:
+                        print(f"Successfully extracted {filename}")
+                        extracted_count += 1
+                    else:
+                        print(f"Error extracting {filename}: {error}")
+                        # Don't fail immediately, try others
 
-        return True
+            return extracted_count == len(entries)
+
     except Exception as e:
-        print(f"Exception during extraction: {e}")
+        print(f"Critical error: {e}")
         return False
 
 if __name__ == '__main__':
     if len(sys.argv) < 3:
-        print("Usage: extract_stfs.py <input_file> <output_dir>")
         sys.exit(1)
-
     success = extract_stfs(sys.argv[1], sys.argv[2])
     sys.exit(0 if success else 1)
