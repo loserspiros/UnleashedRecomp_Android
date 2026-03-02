@@ -92,7 +92,7 @@ jobs:
           path: |
             ./thirdparty/vcpkg/downloads
             ./thirdparty/vcpkg/packages
-          key: vcpkg-${{ inputs.os }}-${{ hashFiles('vcpkg.json') }}
+          key: vcpkg-${{ inputs.os || 'android' }}-${{ hashFiles('vcpkg.json') }}
 
       - name: Bootstrap vcpkg (Linux/Windows)
         if: ${{ inputs.os != '' || github.event_name == 'push' }}
@@ -245,6 +245,11 @@ jobs:
 
             # Find the file case-insensitively, anywhere in private/, as a file
             local found_file=$(find ./UnleashedRecompLib/private -type f -iname "$filename" | { grep -vFx "$target_path" || true; } | head -n 1)
+            local candidate_count=$(find ./UnleashedRecompLib/private -type f -iname "$filename" | { grep -vFx "$target_path" || true; } | wc -l)
+            if [ "$candidate_count" -gt 1 ]; then
+                echo "Warning: Multiple candidates for $filename found. Using the first one."
+                find ./UnleashedRecompLib/private -type f -iname "$filename" | { grep -vFx "$target_path" || true; }
+            fi
 
             if [ -n "$found_file" ]; then
               echo "Found $filename at $found_file, moving to root as $filename..."
