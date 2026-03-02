@@ -112,6 +112,7 @@ jobs:
           ./build_tools.sh
 
       - name: Download Data
+        if: ${{ runner.os == 'Linux' && (github.event_name == 'workflow_dispatch' || env.ASSET_REPO != '') }}
         env:
           GAME_URL: ${{ inputs.game_url }}
           UPDATE_URL: ${{ inputs.update_url }}
@@ -196,7 +197,7 @@ jobs:
           echo "Checking for nested archives/ISOs in ./UnleashedRecompLib/private/..."
           # Max 5 levels of nesting
           for i in {1..5}; do
-            local nested=$(find ./UnleashedRecompLib/private -type f \( -iname "*.iso" -o -iname "*.7z" -o -iname "*.zip" -o -iname "*.rar" \) -not -name "*.skipped" | head -n 1)
+            nested=$(find ./UnleashedRecompLib/private -type f \( -iname "*.iso" -o -iname "*.7z" -o -iname "*.zip" -o -iname "*.rar" \) -not -name "*.skipped" | head -n 1)
             if [ -z "$nested" ]; then
               break
             fi
