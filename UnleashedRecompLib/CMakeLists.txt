@@ -14,7 +14,7 @@ if(MISSING_ASSETS)
                         "  ${MISSING_ASSETS}\n\n"
                         "To fix this:\n"
                         "1. Local build: Place the original game files in UnleashedRecompLib/private/\n"
-                        "2. GitHub Actions: Ensure "game_url" and "dlc_url" inputs are provided correctly.\n\n")
+                        "2. GitHub Actions: Ensure \"game_url\" and \"dlc_url\" inputs are provided correctly.\n\n")
 endif()
 
 add_compile_options(

@@ -24,6 +24,7 @@ endif()
 set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 
 project("UnleashedRecomp-ALL")
+find_package(TBB CONFIG REQUIRED)
 
 enable_testing()
 
