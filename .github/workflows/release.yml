@@ -19,7 +19,7 @@ on:
         default: 'android'
       game_url:
         description: 'URL for game data (ISO/XEX/ZIP/7Z/RAR)'
-        required: false
+        required: true
         type: string
       update_url:
         description: 'URL for update data (default.xexp/ZIP/7Z/RAR) (optional)'
@@ -134,11 +134,13 @@ jobs:
                  rm "$temp_file"
               elif [ "$target_name" == "game" ]; then
                  if [[ "$RUNNER_OS" == "Linux" ]] && file "$temp_file" | grep -qi 'iso'; then
-                    echo "Detected ISO file"
-                    mv "$temp_file" ./UnleashedRecompLib/private/game.iso
+                    echo "Detected ISO file, extracting contents..."
+                    7z x -y "$temp_file" -o./UnleashedRecompLib/private/
+                    rm "$temp_file"
                  elif [[ "$url" == *.iso ]]; then
-                    echo "Detected ISO file by extension"
-                    mv "$temp_file" ./UnleashedRecompLib/private/game.iso
+                    echo "Detected ISO file by extension, extracting contents..."
+                    7z x -y "$temp_file" -o./UnleashedRecompLib/private/
+                    rm "$temp_file"
                  else
                     echo "Assuming XEX file"
                     mv "$temp_file" ./UnleashedRecompLib/private/default.xex
@@ -168,6 +170,10 @@ jobs:
           find ./UnleashedRecompLib/private -maxdepth 4 -iname "shader.ar" -exec mv {} ./UnleashedRecompLib/private/shader.ar \; 2>/dev/null || true
 
           # Verification
+          if [ ! -f "./UnleashedRecompLib/private/default.xex" ]; then
+            echo "Error: default.xex not found after download/checkout!"
+            false
+          fi
           ls -l ./UnleashedRecompLib/private/
 
       - name: Build APK (Android only)
