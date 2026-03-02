@@ -1,6 +1,5 @@
 project("UnleashedRecomp")
 
-find_package(TBB CONFIG REQUIRED)
 
 
 
