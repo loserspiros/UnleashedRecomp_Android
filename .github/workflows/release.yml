@@ -119,6 +119,19 @@ jobs:
           find tools/XenosRecomp/thirdparty/dxc-bin/bin -type f -name "dxc-linux" -exec chmod +x {} +
           ./build_tools.sh
 
+      - name: Build extract-xiso
+        if: ${{ runner.os == "Linux" }}
+        run: |
+          git clone https://github.com/XboxDev/extract-xiso.git
+          cd extract-xiso
+          # Patch to ignore EEXIST on mkdir
+          sed -i "s|if ( ( err = mkdir( dir->filename, 0755 ) ) ) mkdir_err( dir->filename );|if ( ( err = mkdir( dir->filename, 0755 ) ) ) { if ( errno != EEXIST ) mkdir_err( dir->filename ); else err = 0; }|" extract-xiso.c
+          sed -i "s|if ( ( err = mkdir( iso_name, 0755 ) ) ) mkdir_err( iso_name );|if ( ( err = mkdir( iso_name, 0755 ) ) ) { if ( errno != EEXIST ) mkdir_err( iso_name ); else err = 0; }|" extract-xiso.c
+          mkdir build && cd build
+          cmake .. -DCMAKE_BUILD_TYPE=Release
+          make -j$(nproc)
+          sudo make install
+
       - name: Download Data
         if: ${{ runner.os == 'Linux' && (github.event_name == 'workflow_dispatch' || env.ASSET_REPO != '') }}
         env:
@@ -127,7 +140,7 @@ jobs:
           DLC_URL: ${{ inputs.dlc_url }}
         run: |
           # Verify critical dependencies
-          for cmd in 7z wget python3; do
+          for cmd in 7z wget python3 extract-xiso; do
             if ! command -v $cmd &> /dev/null; then
               echo "::error::Required command '$cmd' not found!"
               false
@@ -192,14 +205,11 @@ jobs:
             success=0
             # Order: extract-xiso (ISO) -> extract_xgd.py (XGD fallback) -> extract_stfs.py -> 7z
             if [[ "$nested" =~ \.[Ii][Ss][Oo]$ ]]; then
-               if command -v extract-xiso &> /dev/null; then
-                 echo "Attempting extract-xiso for: $nested"
-                 if extract-xiso -x "$nested" -d ./UnleashedRecompLib/private/ ; then
-                   echo "Successfully extracted with extract-xiso: $nested"
-                   success=1
-                 fi
-               fi
-               if [ "$success" -eq 0 ] && python3 tools/extract_xgd.py "$nested" ./UnleashedRecompLib/private/ ; then
+               echo "Attempting extract-xiso for: $nested"
+               if extract-xiso -x "$nested" -d ./UnleashedRecompLib/private/ ; then
+                 echo "Successfully extracted with extract-xiso: $nested"
+                 success=1
+               elif python3 tools/extract_xgd.py "$nested" ./UnleashedRecompLib/private/ ; then
                  echo "Successfully extracted with extract_xgd.py: $nested"
                  success=1
                fi
