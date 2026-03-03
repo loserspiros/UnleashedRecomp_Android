@@ -301,7 +301,7 @@ set_target_properties(UnleashedRecomp PROPERTIES OUTPUT_NAME "main")
 find_package(CURL REQUIRED)
 
 target_link_libraries(UnleashedRecomp PRIVATE
-    TBB::tbb
+    $<$<NOT:$<BOOL:${ANDROID}>>:TBB::tbb>
     fmt::fmt
     libzstd_static
     msdf-atlas-gen::msdf-atlas-gen
