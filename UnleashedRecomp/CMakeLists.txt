@@ -68,7 +68,9 @@ add_compile_options(
     -Wno-tautological-undefined-compare
 )
 
-add_compile_options(-ffp-model=strict)
+if(NOT ANDROID)
+    add_compile_options(-ffp-model=strict)
+endif()
 
 add_compile_definitions(
     _DISABLE_CONSTEXPR_MUTEX_CONSTRUCTOR
