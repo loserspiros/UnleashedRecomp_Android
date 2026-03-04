@@ -1,7 +1,6 @@
 #pragma once
 
 #include <iterator>
-#include <cstdint>
 #include "pch.h"
 #include "recompiler_config.h"
 #include <fmt/format.h>

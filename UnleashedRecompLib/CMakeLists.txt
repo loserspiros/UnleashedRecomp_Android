@@ -26,9 +26,7 @@ add_compile_options(
 if (WIN32)
     add_compile_options(/fp:strict)
 else()
-    if(NOT ANDROID)
     add_compile_options(-ffp-model=strict)
-endif()
 endif()
 
 set(UNLEASHED_RECOMP_PPC_RECOMPILED_SOURCES 
@@ -83,14 +81,14 @@ file(GLOB XENOS_RECOMP_SOURCES
 )
 
 add_custom_command(
-    OUTPUT 
+    OUTPUT
         "${CMAKE_CURRENT_SOURCE_DIR}/shader/shader_cache.cpp"
     COMMAND
         $<TARGET_FILE:XenosRecompHost> "${CMAKE_CURRENT_SOURCE_DIR}/private" "${CMAKE_CURRENT_SOURCE_DIR}/shader/shader_cache.cpp" "${XENOS_RECOMP_INCLUDE}"
-    DEPENDS 
+    DEPENDS
         "${CMAKE_CURRENT_SOURCE_DIR}/private/default_patched.xex"
-        "${CMAKE_CURRENT_SOURCE_DIR}/private/shader_decompressed.ar" 
-        ${XENOS_RECOMP_SOURCES} 
+        "${CMAKE_CURRENT_SOURCE_DIR}/private/shader_decompressed.ar"
+        ${XENOS_RECOMP_SOURCES}
         ${XENOS_RECOMP_INCLUDE}
     USES_TERMINAL
 )
