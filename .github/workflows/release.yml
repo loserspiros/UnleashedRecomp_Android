@@ -76,9 +76,9 @@ jobs:
       - name: Download Data
         if: ${{ github.event_name == 'workflow_dispatch' || env.ASSET_REPO != '' }}
         env:
-          GAME_URL: ${{ inputs.game_url }}
-          UPDATE_URL: ${{ inputs.update_url }}
-          DLC_URL: ${{ inputs.dlc_url }}
+          GAME_URL: ${{ github.event.inputs.game_url }}
+          UPDATE_URL: ${{ github.event.inputs.update_url }}
+          DLC_URL: ${{ github.event.inputs.dlc_url }}
         run: |
           mkdir -p ./UnleashedRecompLib/private
 
@@ -86,7 +86,6 @@ jobs:
             local url="$1"
             if [ -z "$url" ]; then return 0; fi
             echo "::add-mask::${url}"
-            # Use --content-disposition to preserve original filenames
             wget --no-check-certificate --content-disposition --tries=3 --retry-connrefused --waitretry=5 -q -P ./UnleashedRecompLib/private/ "${url}"
           }
 
@@ -100,7 +99,7 @@ jobs:
 
           # Recursive extraction
           for i in {1..15}; do
-            nested=$(find ./UnleashedRecompLib/private -type f \( -iname "*.iso" -o -iname "*.7z" -o -iname "*.zip" -o -iname "*.rar" -o -iname "TU_*" -o -iname "*.tar*" -o -iregex ".*/[0-9a-fA-F]\\{8,42\\}" \) -not -name "*.skipped" -not -name "*.extracted" | head -n 1)
+            nested=$(find ./UnleashedRecompLib/private -type f \( -iname "*.iso" -o -iname "*.7z" -o -iname "*.zip" -o -iname "*.rar" -o -iname "TU_*" -o -iname "*.tar*" -o -iregex ".*/[0-9a-fA-F]\{8,42\}" \) -not -name "*.skipped" -not -name "*.extracted" | head -n 1)
             if [ -z "$nested" ]; then break; fi
 
             filename=$(basename "$nested")
@@ -109,7 +108,6 @@ jobs:
             if [[ "$extension" =~ ^(iso|ISO)$ ]]; then is_iso=1; fi
 
             success=0
-            # Try 7z first for generic archives, then specialized tools
             if 7z x -y "$nested" -o./UnleashedRecompLib/private/ > /dev/null 2>&1; then
               success=1
             elif [ "$is_iso" -eq 1 ] && (extract-xiso -x "$nested" -d ./UnleashedRecompLib/private/ || python3 tools/extract_xgd.py "$nested" ./UnleashedRecompLib/private/); then
@@ -137,7 +135,6 @@ jobs:
                 fi
                 if [ -n "$found_file" ]; then mv -f "$found_file" "$target_path"; fi
             fi
-            # Case fix for root files
             local root_file=$(find ./UnleashedRecompLib/private -maxdepth 1 -type f -iname "$filename" | head -n 1)
             if [ -n "$root_file" ] && [ "$root_file" != "$target_path" ]; then mv -f "$root_file" "$target_path"; fi
           }
@@ -146,22 +143,21 @@ jobs:
           finalize_file "default.xexp"
           finalize_file "shader.ar"
 
-          # Cleanup empty directories
           find ./UnleashedRecompLib/private -depth -type d -empty -delete 2>/dev/null || true
 
       - name: Check Assets and Upload
         id: check-assets
         run: |
-          if [ -f "./UnleashedRecompLib/private/default.xex" ] && [ -f "./UnleashedRecompLib/private/shader.ar" ]; then
+          if [ -f "./UnleashedRecompLib/private/default.xex" ]; then
             echo "has_assets=true" >> $GITHUB_OUTPUT
             echo "Assets found, uploading..."
           else
             echo "has_assets=false" >> $GITHUB_OUTPUT
             if [ "${{ github.event_name }}" == "workflow_dispatch" ] || [ "${{ env.ASSET_REPO }}" != "" ]; then
-              echo "Error: Mandatory assets (default.xex, shader.ar) missing after extraction."
+              echo "Error: Mandatory asset (default.xex) missing after extraction."
               false
             else
-              echo "Warning: Mandatory assets missing."
+              echo "Warning: Mandatory asset missing."
             fi
           fi
 
@@ -174,12 +170,12 @@ jobs:
           retention-days: 1
 
   build:
-    name: Build (${{ inputs.os || 'android' }})
+    name: Build (${{ github.event.inputs.os || 'android' }})
     needs: prepare-assets
     if: needs.prepare-assets.outputs.has_assets == 'true' || github.event_name == 'push'
-    runs-on: ${{ (inputs.os == 'windows') && 'windows-latest' || 'ubuntu-24.04' }}
+    runs-on: ${{ (github.event.inputs.os == 'windows') && 'windows-latest' || 'ubuntu-24.04' }}
     env:
-      OS: ${{ inputs.os || 'android' }}
+      OS: ${{ github.event.inputs.os || 'android' }}
     defaults:
       run:
         shell: bash
@@ -188,7 +184,6 @@ jobs:
         uses: actions/checkout@v4
         with:
           submodules: recursive
-
 
       - name: Setup Linux Dependencies
         if: runner.os == "Linux"
@@ -201,6 +196,7 @@ jobs:
         run: |
           chmod +x ./build_tools.sh
           ./build_tools.sh
+
       - name: Download Prepared Assets
         if: needs.prepare-assets.outputs.has_assets == 'true'
         uses: actions/download-artifact@v4
@@ -238,7 +234,6 @@ jobs:
       - name: Bootstrap vcpkg
         if: env.OS == 'android' || env.OS == 'linux'
         run: ./thirdparty/vcpkg/bootstrap-vcpkg.sh
-
 
       - name: Apply Patches
         run: |
