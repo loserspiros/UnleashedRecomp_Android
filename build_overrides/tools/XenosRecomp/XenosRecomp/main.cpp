@@ -115,7 +115,11 @@ int main(int argc, char** argv)
 
         std::atomic<uint32_t> progress = 0;
 
-        std::for_each(std::execution::par_unseq, shaders.begin(), shaders.end(), [&](auto& hashShaderPair)
+        #ifndef ANDROID
+        std::for_each(std::execution::par_unseq, shaders.begin(), shaders.end(),
+#else
+        std::for_each(shaders.begin(), shaders.end(),
+#endif [&](auto& hashShaderPair)
             {
                 auto& shader = hashShaderPair.second;
 

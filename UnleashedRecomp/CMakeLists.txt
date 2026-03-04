@@ -68,7 +68,9 @@ add_compile_options(
     -Wno-tautological-undefined-compare
 )
 
-add_compile_options(-ffp-model=strict)
+if(NOT ANDROID)
+    add_compile_options(-ffp-model=strict)
+endif()
 
 add_compile_definitions(
     _DISABLE_CONSTEXPR_MUTEX_CONSTRUCTOR
@@ -299,7 +301,7 @@ set_target_properties(UnleashedRecomp PROPERTIES OUTPUT_NAME "main")
 find_package(CURL REQUIRED)
 
 target_link_libraries(UnleashedRecomp PRIVATE
-    TBB::tbb
+    $<$<NOT:$<BOOL:${ANDROID}>>:TBB::tbb>
     fmt::fmt
     libzstd_static
     msdf-atlas-gen::msdf-atlas-gen
