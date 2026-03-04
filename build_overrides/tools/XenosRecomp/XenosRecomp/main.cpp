@@ -119,7 +119,8 @@ int main(int argc, char** argv)
         std::for_each(std::execution::par_unseq, shaders.begin(), shaders.end(),
 #else
         std::for_each(shaders.begin(), shaders.end(),
-#endif [&](auto& hashShaderPair)
+#endif
+        [&](auto& hashShaderPair)
             {
                 auto& shader = hashShaderPair.second;
 
